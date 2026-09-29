@@ -1,0 +1,47 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+storybook-static
+*.local
+
+# Local databases
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Locally rendered documents (UPLOADS_DIR). Keep the directory itself so the
+# Compose api bind mount lands on a host-owned path on a fresh clone.
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# AI agent worktrees
+.claude/worktrees/
+
+# Test / Playwright
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+*.zip
