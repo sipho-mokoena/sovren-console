@@ -1,0 +1,153 @@
+---
+title: Runbook
+description: A clean clone to a running console and documentation site, without tribal knowledge.
+---
+
+Everything below is a `make` target. None of them is a command you have to remember
+separately, and none of them takes a port number — every port comes from
+`config/ports.env`.
+
+## Before you start
+
+You need Node 24 and pnpm on your `PATH`. If `pnpm` is not found, it is usually
+installed but not on the shell's path:
+
+```sh
+export PATH="$HOME/.local/share/pnpm:$PATH"
+```
+
+`make` and `git` are the only other requirements for a local run. Docker is
+needed only for `make up`.
+
+## 1. Install
+
+```sh
+make install
+```
+
+This installs every workspace package. The repository is a pnpm workspace with
+five packages, and the console's dependencies are generated, so a partial install
+will not do.
+
+## 2. Run the console and this site
+
+```sh
+make dev
+```
+
+Two processes start side by side, each on its own port from the registry:
+
+- the console, on the console port
+- this documentation site, on the docs port
+
+The console needs no Proxmox, no NetBird, no Dokploy and no control plane. Its
+mock backend is generated from the same OpenAPI document as its client, which is
+what makes it incapable of drifting from one. To see a failure path, press `d` in
+any list to cycle the error sentinels.
+
+The port map is on the [port map page](/docs/guide/ports), rendered from the
+registry rather than written out again.
+
+## 3. Check the work
+
+```sh
+make check
+```
+
+The full sweep: generate the client from the contract, format, lint, type-check,
+test, and fail if the committed generated output differs from a fresh
+regeneration. Run it before you open a pull request; it is the same thing CI runs.
+
+Individual pieces, when you want just one:
+
+- `make lint` — format check and lint
+- `make typecheck` — types only
+- `make test` — every test in the workspace
+- `make generate` — regenerate the client from `openapi/sovren.json`
+
+## 4. Run it in containers
+
+```sh
+make up
+```
+
+Builds the console and this site's images, starts the database, and waits until
+every service reports healthy before it returns. The compose file reads
+`config/ports.env` as its env file, so the ports published on the host are the
+ones in the registry — and no port is written in the compose file itself.
+
+Three services:
+
+- **the console**, on the console port, serving its production build
+- **this site**, on the docs port, built from this repository's own markdown
+- **PostgreSQL**, on the postgres port, with a named volume
+
+The database is the interesting one, because nothing connects to it yet. There
+is no control plane in this prototype and neither of the two services above
+opens a socket to it. It is here anyway, and worth being straight about why: the
+health check, the volume lifecycle and the reserved port are all exercised now,
+so the control plane lands on a wiring that is already known to work. What it
+costs today is memory — a small, idle container. If you would rather not spend
+it, the service block in `docker-compose.yml` is the whole change; nothing else
+refers to it.
+
+Both app services wait for the database to be healthy before they start. That
+ordering is the control plane's ordering, adopted now rather than later.
+
+`make dev` remains the faster loop for editing. `make up` runs the built thing,
+which is a different question and the one worth asking before you ship.
+
+Around it:
+
+- `make ps` — the stack, and the host port each service is on
+- `make logs` — follow every service's logs, prefixed by service name
+- `make down` — stop the stack, keep the database volume
+- `make down-hard` — stop it and discard the database volume
+
+### A second checkout on the same machine
+
+Two checkouts run side by side without editing a file. Each gets its own
+containers, network and database volume automatically, because compose names all
+three after the directory. Only the ports need help.
+
+Before `make up`, export the `HOST_PORT` half of the registry — one per
+published service, `SOVREN_CONSOLE_HOST_PORT`, `SOVREN_DOCS_HOST_PORT` and
+`SOVREN_POSTGRES_HOST_PORT`, each set to a port nothing else on this machine is
+using. Leave them unset and the registry's own values are used, which is the
+normal case.
+
+Those three names are deliberately absent from `config/ports.env`. The registry
+describes the block _this_ checkout uses; the shift is a property of the
+machine's shell, not of the repository, and putting it in the registry would put
+one machine's arrangement into a file every other checkout reads. The port map
+on [the port map page](/docs/guide/ports) keeps showing the registry's block,
+which is correct — it is describing the registry, not your shell.
+
+## When something is wrong
+
+List every target the Makefile declares:
+
+<MakeTargets />
+
+`make help` prints the same list with its one-line descriptions.
+
+Three failures worth recognising:
+
+- **`generate-check` fails.** The committed generated client is stale. Run
+  `make generate` and commit the result. Never hand-edit
+  `packages/client/src/generated/`.
+- **A port is already in use.** The registry is the only place a port is written.
+  Change it in `config/ports.env` and the Makefile, docker compose and this site
+  all follow.
+- **A container exits with the port in the message.** Something else already
+  holds it. `make ps` shows what this stack claimed; the port map on
+  [the port map page](/docs/guide/ports) shows the registry's.
+
+## What is real and what is not
+
+There is no control plane, no Proxmox, no NetBird and no Dokploy in this
+prototype. Everything the console renders comes from the mock backend, and
+nothing on this site describes hardware you can reach from here.
+
+What _is_ real, and worth trusting: the OpenAPI document, the client generated
+from it, the fakes seeded from one estate description, and this site.

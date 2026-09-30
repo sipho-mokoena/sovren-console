@@ -1,0 +1,19 @@
+---
+title: Port map
+description: Every port sovren publishes, rendered from the registry that the Makefile and docker compose read.
+---
+
+`config/ports.env` is the only place a port number is written. The Makefile
+includes it, docker compose reads it as an env file, and the table below is read
+out of it while this site builds.
+
+<PortMap />
+
+That is one file with one rule attached: if a service needs a port, add it to
+`config/ports.env` and make everything else read it from there. A port written
+anywhere else is a bug, because the next person will change the registry and it
+will not move.
+
+The registry also carries each port's description, in the comment above the
+assignment — which is where the sentence in the first column comes from. Editing
+that comment changes this page.

@@ -1,0 +1,6 @@
+# Next build output
+.next
+# fumadocs-mdx compiled config + emitted entry files
+.source
+# Next writes a tsconfig.json on build when it needs to amend compiler options
+tsconfig.tsbuildinfo

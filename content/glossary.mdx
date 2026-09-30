@@ -1,0 +1,68 @@
+---
+title: Glossary
+description: The vocabulary, and the three distinctions that are easy to lose.
+---
+
+The full noun list is not here. It lives in one table, in the
+[specification's nomenclature section](/docs/specs/sovren-control-plane#nomenclature),
+because that is where the rules that produced it are stated and a second copy
+would be free to drift from them.
+
+Two rules govern every noun in this system:
+
+1. **Upstream nouns are adopted verbatim and never renamed.** The operator sees
+   Proxmox's, NetBird's and Dokploy's vocabularies too. A sovren-specific word
+   for something natively called a NetBird Group would force a translation table
+   and the operator would have to learn it.
+2. **Names are invented only for what sovren owns.** That is the whole of it.
+
+## The three distinctions that get lost
+
+These are the ones that actually cause mistakes, so they are worth stating
+outside the table.
+
+### `Drive` is not `Disk`
+
+A `Drive` is a physical disk on a `Node`. A `Disk` is VM storage. They are
+different objects with different lifetimes and different failure modes, and the
+spec names the first one `Drive` specifically so the second stays unambiguous.
+Never use them for each other, and never let a UI label a VM's storage "drive".
+
+### `Endpoint` is not `Service`
+
+NetBird calls its own service an "service", which collides with the Dokploy
+`Service` — the umbrella noun for a deployed workload. Rather than translate
+either, NetBird's is renamed here to `Endpoint`: a reachable address for a
+`Service`, being TLS termination plus group-gated access.
+
+The related pair is easy to conflate and is not the same thing. A
+`NetworkResource` is a name that resolves directly to an address and a port, and
+is enough for plaintext service-to-service traffic over the mesh. An `Endpoint`
+terminates TLS and proxies, and is what a browser needs. Plaintext over an
+already-encrypted tunnel is sound; certificates are spent only where a browser
+terminates them.
+
+### `Site` is not a security boundary
+
+A `Site` is a physical grouping — a corosync latency boundary and a failure
+blast radius. It is explicitly _not_ a tenancy boundary, and no isolation is
+built on it. This matches how the hardware actually fails, which is the point.
+
+## Words that are sovren's own
+
+Of the noun table, four are invented rather than adopted: `Fleet` (the whole
+estate), `Site` (the physical grouping above), `Image` (a bootable base a VM is
+created from — the marked golden template is the practical instance of it), and
+`CertificateAuthority` (the internal CA that issues the one wildcard certificate
+covering the internal domain).
+
+`Task` is also sovren's, and it is the one concept not borrowed at all. Long work
+— a VM boot, a Terraform apply, an Ansible run — outlives the request that
+started it, so it is a first-class resource with its own state and its own logs.
+Its states are `queued`, `running`, `succeeded`, `failed` and `cancelled`.
+
+## Requirements
+
+The numbered index of what has been asked for is the
+[requirements document](/docs/tech-stack). It is the place to look up what an `R`
+number means; the specification is the place to look up what the system does.

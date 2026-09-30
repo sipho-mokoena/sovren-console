@@ -1,0 +1,22 @@
+# Build context for packages/docs/Dockerfile.
+#
+# Next to the Dockerfile rather than at the repository root, because the root is
+# not this package's to edit -- and because this build takes the repository root
+# as its context, since the site's content is the repository's own markdown.
+#
+# Without this, `COPY . .` would carry the host's installed dependencies and
+# build output into the image.
+
+**/node_modules
+**/.next
+**/.source
+**/dist
+**/tsconfig.tsbuildinfo
+**/playwright-report
+**/test-results
+**/coverage
+**/*.log
+
+.git
+.gitignore
+.DS_Store

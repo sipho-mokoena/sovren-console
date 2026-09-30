@@ -1,0 +1,50 @@
+---
+title: Start here
+description: What this site is, and where each thing it shows comes from.
+---
+
+This site is the repository's documentation, rendered. It carries the
+control-plane spec, the requirements index, the architecture decision records, the
+glossary, the port map, and the runbook — and every one of those is the
+repository's own file, read from where it already lives rather than copied into a
+content folder.
+
+## Where each thing comes from
+
+| On this site                     | Read from                            |
+| -------------------------------- | ------------------------------------ |
+| Specification                    | `docs/specs/sovren-control-plane.md` |
+| Requirements R1–R69              | `docs/tech-stack.md`                 |
+| Decisions                        | every `docs/adr/*.md`                |
+| Contributing                     | `docs/agents/*.md`                   |
+| Port map                         | `config/ports.env`                   |
+| Runbook, this page, the glossary | `content/*.mdx`                      |
+
+The first four are globs over the repository, so an ADR written tomorrow appears
+here tomorrow with nothing to add. The port map is read out of the registry while
+the site builds. The last row is the small amount of prose the site owns.
+
+## Where to start
+
+If you have never seen this repository, read the
+[specification](/docs/specs/sovren-control-plane) — it is authoritative on
+behaviour and everything else defers to it — and then follow the
+[runbook](/docs/guide/runbook) to get something running.
+
+If you already know the shape of it and want the numbers,
+[Requirements](/docs/tech-stack) is the index of R1 to R69, and the
+[port map](/docs/guide/ports) says which port everything binds.
+
+If you are about to write code, the [glossary](/docs/guide/glossary) is short and
+the distinctions in it are the ones that are easy to lose.
+
+## The two authorities
+
+There are two documents, and they do not overlap.
+
+The **specification** says what the system does. It is prose, it is
+authoritative, and it is the thing to change when behaviour changes.
+
+The **requirements index** says what has been asked for, numbered R1 to R69, and
+records the stack decisions and the trade-offs behind them. It is the index, not
+the argument; where the two disagree on behaviour, the specification wins.
