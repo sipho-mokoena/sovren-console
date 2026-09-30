@@ -1,0 +1,25 @@
+# Build context for packages/console/Dockerfile.
+#
+# Next to the Dockerfile rather than at the repository root, for the same reason
+# packages/docs has its own: the root is not this package's to edit, and the
+# build takes the repository root as its context because the console is one
+# package of a pnpm workspace -- it needs its siblings to be present to build.
+#
+# Without this, `COPY . .` would carry the host's installed dependencies and
+# build output into the image, which both inflates it and risks a Linux build
+# picking up a Darwin or Windows native binary the host happened to have.
+
+**/node_modules
+**/.next
+**/.source
+**/dist
+**/.tanstack
+**/tsconfig.tsbuildinfo
+**/playwright-report
+**/test-results
+**/coverage
+**/*.log
+
+.git
+.gitignore
+.DS_Store
