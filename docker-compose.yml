@@ -1,0 +1,184 @@
+# sovren, as containers.
+#
+# Every published port is read from config/ports.env. The Makefile passes that
+# file to compose with `--env-file`, so the ports bound on the host are the
+# registry's -- and not a number written here. Not one port number appears in a
+# functional position in this file. If you find yourself adding one, the registry
+# has a line for it and this file should be reading that line instead.
+#
+#   make up      bring the stack up, waiting for every service to be healthy
+#   make down    stop it, keeping the database volume
+#   make down-hard   stop it and discard the database volume
+#   make ps      the stack, and the host port each service is on
+#   make logs    every service's logs, prefixed by service name
+#
+# Read the runbook (content/runbook.mdx) for what each service is for.
+#
+# ---------------------------------------------------------------------------
+# A second checkout on the same machine
+# ---------------------------------------------------------------------------
+# Compose names its containers, its network and its volumes after the PROJECT,
+# which defaults to the directory name. Two checkouts in differently named
+# directories therefore already coexist: different containers, different network,
+# different database volume. The only thing left to separate is the PORTS.
+#
+# Every host binding below is written
+#
+#     ${SOVREN_<SERVICE>_HOST_PORT:-${SOVREN_<SERVICE>_PORT}}
+#
+# The registry value is the DEFAULT, so an ordinary checkout needs no environment
+# at all and the registry remains the single source of truth. A second checkout
+# exports the three HOST_PORT variables in its shell and the whole block moves:
+#
+#   SOVREN_CONSOLE_HOST_PORT=5141 \
+#   SOVREN_DOCS_HOST_PORT=5142 \
+#   SOVREN_POSTGRES_HOST_PORT=45433 \
+#     make up
+#
+# That is a shell environment, not an edit to any file. It works because of how
+# the two layers meet: the Makefile `include`s config/ports.env, which pins
+# SOVREN_<SERVICE>_PORT, and the HOST_PORT names appear nowhere in the registry,
+# so nothing overwrites them -- they reach compose, where an exported variable
+# takes precedence over `--env-file`.
+#
+# Compose interpolates, it does not compute, so there is no way to write one
+# "offset" and add it to three ports here. The three variables above are the
+# honest form of that idea, and they are the only thing a second checkout has to
+# supply.
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 17
+  # ---------------------------------------------------------------------------
+  # The control plane's database, which does not exist yet. The port is reserved
+  # and documented because the control plane will need it, and the ticket asks
+  # for the service, so it is here and it is real: it starts, it is healthy, its
+  # volume survives `make down` and is discarded by `make down-hard`.
+  #
+  # Nothing connects to it yet, and that is worth saying plainly rather than
+  # hiding. The console runs in SPA mode against a mock backend in the browser
+  # and the documentation site is static; neither opens a socket. The honest
+  # accounting is that this container currently costs memory and buys a
+  # rehearsed wiring: the health check, the volume lifecycle and the port
+  # reservation are all exercised now, so the control plane lands on a path that
+  # is already known to work rather than on a new one. An idle postgres:17-alpine
+  # is tens of megabytes. If that is not wanted on a given host, removing this
+  # one service block is the whole change -- nothing else refers to it.
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sovren
+      # A DEVELOPMENT DEFAULT, NOT A SECRET. This container is reachable only on
+      # the loopback interface, on a port from the registry, and holds nothing
+      # but a prototype's scratch data. It is written in the clear so that nobody
+      # later mistakes a compose file full of realistic-looking base64 for a
+      # place real credentials belong, and so that a reader is never left
+      # wondering whether this string is load-bearing. Do not reuse it, do not
+      # copy it into an environment file for a shared host, and replace it before
+      # this stack is ever reachable from anywhere but this machine.
+      POSTGRES_PASSWORD: sovren
+      POSTGRES_DB: sovren
+      # The listener binds the registry's port inside the container too, so the
+      # number compose publishes and the number the server accepts cannot drift.
+      PGPORT: ${SOVREN_POSTGRES_PORT}
+    ports:
+      - "127.0.0.1:${SOVREN_POSTGRES_HOST_PORT:-${SOVREN_POSTGRES_PORT}}:${SOVREN_POSTGRES_PORT}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` and nothing else. It reports the server accepting
+      # connections, which is the fact the other services would race, and it does
+      # not authenticate -- so the password above is never on a command line
+      # where it would land in a process listing or a health-check log.
+      test: ["CMD-SHELL", "pg_isready -U sovren -d sovren -p ${SOVREN_POSTGRES_PORT}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # The console
+  # ---------------------------------------------------------------------------
+  # Built from packages/console/Dockerfile, from the repository root: the console
+  # is one package of a pnpm workspace and cannot build without its siblings.
+  #
+  # It runs the production build behind `vite preview`, not `vite dev`. That is a
+  # deliberate choice and the runbook says so too: the point of `make up` is to
+  # run the thing that would be run, and a dev server in a container is a second
+  # thing that can be wrong. `make dev` is the edit loop and it is faster.
+  #
+  # The repository is still mounted. Not for hot reload -- a production build
+  # does not hot reload, and pretending otherwise would be the worst of both --
+  # but so that the container serves the checkout's own files: the port registry
+  # and the documentation content it renders are the working tree's, not a copy
+  # frozen at image build time. Read-only, so the container cannot write to the
+  # host.
+  console:
+    build:
+      context: .
+      dockerfile: packages/console/Dockerfile
+    restart: unless-stopped
+    environment:
+      SOVREN_CONSOLE_PORT: ${SOVREN_CONSOLE_PORT}
+    ports:
+      - "127.0.0.1:${SOVREN_CONSOLE_HOST_PORT:-${SOVREN_CONSOLE_PORT}}:${SOVREN_CONSOLE_PORT}"
+    volumes:
+      - ./config:/srv/config:ro
+      - ./content:/srv/content:ro
+      - ./docs:/srv/docs:ro
+    healthcheck:
+      # `/` answers 307 to the first screen, and wget follows it, so this is a
+      # real request through a redirect rather than a port probe.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:${SOVREN_CONSOLE_PORT}/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    # The console waits for the database to be healthy, which is the ordering the
+    # ticket asks for and the ordering the control plane will need.
+    #
+    # Nothing in the console reads that database today -- it runs in SPA mode
+    # against a mock backend in the browser -- so this dependency is currently
+    # about start order rather than about data, and it is stated here rather than
+    # implied. It is not free of cost: `make up` now waits for postgres to pass
+    # its health check before the console starts. That is the point, and it is
+    # also the argument for keeping postgres in this file at all.
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # The documentation site
+  # ---------------------------------------------------------------------------
+  # Built from packages/docs/Dockerfile, also from the repository root, because
+  # the site's content IS the repository's markdown: docs/, content/ and
+  # config/ports.env. That image was already written and verified, and it is
+  # reused as it stands rather than rebuilt here.
+  docs:
+    build:
+      context: .
+      dockerfile: packages/docs/Dockerfile
+    restart: unless-stopped
+    environment:
+      # `next start` reads PORT. The image carries 4142 as a last resort; this
+      # overrides it from the registry, so the port the container listens on and
+      # the port the host publishes come from one line of one file.
+      PORT: ${SOVREN_DOCS_PORT}
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "127.0.0.1:${SOVREN_DOCS_HOST_PORT:-${SOVREN_DOCS_PORT}}:${SOVREN_DOCS_PORT}"
+    # The port map on this site is rendered from config/ports.env while it
+    # builds, so mounting the registry keeps the running site and the working
+    # tree in agreement about what the ports are.
+    volumes:
+      - ./config:/srv/config:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  # Named, so `make down` keeps it and `make down-hard` discards it. Compose
+  # prefixes the name with the project, which is the directory name, so a second
+  # checkout gets its own database rather than sharing this one.
+  postgres-data:
