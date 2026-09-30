@@ -230,7 +230,7 @@ Every page is one of three:
 
 - **List** — header with icon and title, then a refresh control with a last-updated timestamp, then a create action, then the table, then a pagination bar.
 - **Detail** — breadcrumb, header, tabs, content. Key/value via a properties table; every detail opens with an ID/created/updated block.
-- **Form** — a side panel over the still-mounted list, driven by its own route so it is linkable.
+- **Form** — a page of its own, on its own route, so it is linkable, and returning to the list restores the filters, sort and page the operator left. **Changed from a side panel over the still-mounted list.** The requirement it was serving was R49 — _do not lose my place_ — and a drawer satisfied that by keeping the list mounted. A full page satisfies it better, by carrying the list's state in the URL, and it does so without the two obligations a drawer creates: the form has to live inside a layout that owns another screen, and a form deep-linked cold arrives with no list behind it and nothing to return to. The cost is real and worth naming — the list unmounts, so the state has to be carried rather than retained, which is a real invariant for the form to uphold rather than a property the router gives it for free.
 
 Table conventions are fixed row heights, a sticky identity column, a sticky action column, and server-side pagination with an opaque token.
 

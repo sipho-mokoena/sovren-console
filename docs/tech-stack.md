@@ -69,17 +69,17 @@ Companion to `docs/specs/sovren-control-plane.md`. The spec is authoritative on 
 
 ### Console
 
-| #   | Requirement                                                                                   |
-| --- | --------------------------------------------------------------------------------------------- |
-| R37 | Three scopes — Fleet, Site, Settings — switched from the top bar, each with its own sidebar   |
-| R38 | Three archetypes — list, detail, form — and every page is one of them                         |
-| R39 | A form is a side panel over the still-mounted list, driven by its own route so it is linkable |
-| R40 | Every detail page opens with an ID / created / updated block                                  |
-| R41 | State lives in routes and URL parameters, not in a global store                               |
-| R42 | Tables: fixed row heights, sticky identity and action columns, server-side pagination         |
-| R43 | A disabled action explains itself rather than disappearing                                    |
-| R44 | Toasts use the present tense; the console never claims completion it has not observed         |
-| R45 | Visual language is sovren's own — no external design system to inherit                        |
+| #   | Requirement                                                                                                                                                                                     |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R37 | Three scopes — Fleet, Site, Settings — switched from the top bar, each with its own sidebar                                                                                                     |
+| R38 | Three archetypes — list, detail, form — and every page is one of them                                                                                                                           |
+| R39 | A form is a page of its own, on its own route so it is linkable, and returning restores the list's filters, sort and page. State is carried in the URL rather than held by a still-mounted list |
+| R40 | Every detail page opens with an ID / created / updated block                                                                                                                                    |
+| R41 | State lives in routes and URL parameters, not in a global store                                                                                                                                 |
+| R42 | Tables: fixed row heights, sticky identity and action columns, server-side pagination                                                                                                           |
+| R43 | A disabled action explains itself rather than disappearing                                                                                                                                      |
+| R44 | Toasts use the present tense; the console never claims completion it has not observed                                                                                                           |
+| R45 | Visual language is sovren's own — no external design system to inherit                                                                                                                          |
 
 ### Provisioning and tasks
 
