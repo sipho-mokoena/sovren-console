@@ -1,12 +1,22 @@
-overrides:
-  vite@*: "catalog:"
+packages:
+  - packages/*
+
+# esbuild and msw ship postinstall scripts that place their native binaries.
+# Named explicitly rather than blanket-approved, so approving the next
+# dependency is still a deliberate act.
+allowBuilds:
+  esbuild: true
+  msw: true
+
 catalog:
   vite: npm:@voidzero-dev/vite-plus-core@0.3.3
   vite-plus: 0.3.3
-peerDependencyRules:
-  allowAny:
-    - vite
-  allowedVersions:
-    vite: "*"
-packages:
-  - packages/*
+
+# No global `vite@*` override.
+#
+# The override existed only to pin the empty starter packages to the vp build
+# of Vite. It rewrites *every* package's Vite, and two packages in this
+# workspace must not have it rewritten: the console needs real Vite 8 for the
+# TanStack Start plugin, and the documentation site is a Next app with no Vite
+# at all. The vp build of Vite is a devDependency of the packages that use it
+# instead, which scopes it to those packages and leaves the rest alone.
