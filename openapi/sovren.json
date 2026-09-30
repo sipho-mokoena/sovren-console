@@ -1,0 +1,2150 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "sovren control plane",
+    "version": "0.1.0-prototype",
+    "description": "The sovren contract. Provisional: hand-authored for the prototype, and later derived from the control plane's DTOs rather than authored. See docs/adr/0001-provisional-contract-document.md.\n\nUpstream nouns are adopted verbatim and never renamed. Names are invented only for what sovren owns: Fleet, Site, Image, Task, CertificateAuthority."
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "The control plane, same-origin as the console."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Node",
+      "description": "A physical machine. Heterogeneity is the normal case, not an edge case."
+    },
+    {
+      "name": "Drive",
+      "description": "A physical disk on a Node. Named Drive specifically to keep Disk unambiguous for VM storage."
+    },
+    {
+      "name": "Peer",
+      "description": "An enrolled machine on the overlay. NetBird's noun, adopted verbatim."
+    },
+    {
+      "name": "VM",
+      "description": "A guest, and a first-class offering in its own right. Carries a purpose, so a Service host is distinguishable from a machine being experimented on."
+    },
+    {
+      "name": "Disk",
+      "description": "VM storage. Disk, not Drive: a Drive is physical and belongs to a Node."
+    },
+    {
+      "name": "Snapshot",
+      "description": "A point-in-time disk copy of a VM."
+    },
+    {
+      "name": "Task",
+      "description": "Sovren's own noun for a unit of asynchronous work. A boot, an apply, and a playbook all outlast a request."
+    },
+    {
+      "name": "Connection",
+      "description": "One upstream integration and the credentials sovren holds for it. A credential is never returned, only the fact that it is held."
+    }
+  ],
+  "paths": {
+    "/nodes": {
+      "get": {
+        "operationId": "NodeList",
+        "summary": "List Nodes",
+        "tags": ["Node"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageToken"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "$ref": "#/components/parameters/SiteFilter"
+          },
+          {
+            "$ref": "#/components/parameters/Q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of Nodes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodePage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/nodes/{node}": {
+      "get": {
+        "operationId": "NodeView",
+        "summary": "View a Node",
+        "tags": ["Node"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NodeRef"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Node.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/nodes/{node}/drives": {
+      "get": {
+        "operationId": "DriveList",
+        "summary": "List a Node's Drives",
+        "tags": ["Drive"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NodeRef"
+          },
+          {
+            "$ref": "#/components/parameters/PageToken"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the Node's physical Drives.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrivePage"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/nodes/{node}/drives/{drive}": {
+      "get": {
+        "operationId": "DriveView",
+        "summary": "View a Drive",
+        "tags": ["Drive"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NodeRef"
+          },
+          {
+            "$ref": "#/components/parameters/DriveRef"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Drive.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Drive"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/peers": {
+      "get": {
+        "operationId": "PeerList",
+        "summary": "List Peers",
+        "tags": ["Peer"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageToken"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "$ref": "#/components/parameters/SiteFilter"
+          },
+          {
+            "$ref": "#/components/parameters/NodeFilter"
+          },
+          {
+            "$ref": "#/components/parameters/GroupFilter"
+          },
+          {
+            "$ref": "#/components/parameters/PeerStatusFilter"
+          },
+          {
+            "$ref": "#/components/parameters/Q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of Peers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeerPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/peers/{peer}": {
+      "get": {
+        "operationId": "PeerView",
+        "summary": "View a Peer",
+        "tags": ["Peer"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PeerRef"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Peer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Peer"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/vms": {
+      "get": {
+        "operationId": "VMList",
+        "summary": "List VMs",
+        "tags": ["VM"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageToken"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "$ref": "#/components/parameters/SiteFilter"
+          },
+          {
+            "$ref": "#/components/parameters/NodeFilter"
+          },
+          {
+            "$ref": "#/components/parameters/VMPurposeFilter"
+          },
+          {
+            "$ref": "#/components/parameters/VMRunStateFilter"
+          },
+          {
+            "$ref": "#/components/parameters/Q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of VMs, each already joined to its Node and Site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VMPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "VMCreate",
+        "summary": "Create a VM",
+        "description": "Starts a four-minute boot, so it cannot complete inside a request. Returns 202 and a Task; the operator lands on the Task's progress and the VM reads as transitional until that Task reaches a terminal state.",
+        "tags": ["VM"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VMCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The create is accepted. The Task is the thing to watch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/vms/{vm}": {
+      "get": {
+        "operationId": "VMView",
+        "summary": "View a VM",
+        "tags": ["VM"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VMRef"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The VM.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VM"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "VMDelete",
+        "summary": "Delete a VM",
+        "description": "Destructive, and therefore behind a confirmation that names the resource. Returns a Task like every other long action: tearing a VM down is not something that completes inside a request, and the console must not claim it has until the task says so.",
+        "tags": ["VM"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VMRef"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The delete is accepted. The Task is the thing to watch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "VMUpdate",
+        "summary": "Update a VM",
+        "description": "Applies a partial change. Answers 200 with the VM when the change needs no long work -- a purpose, a tag. Answers 202 with a Task when it does: resizing CPU or memory moves disks on Proxmox, and that cannot complete inside a request, so the console must not claim it has until the Task says so. The boundary is not cosmetic; it is the difference between a save that is done and a save that has been accepted.",
+        "tags": ["VM"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VMRef"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VMUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The change is applied. The VM is current.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VM"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The change is accepted and needs a Task. The Task is the thing to watch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/vms/{vm}/disks": {
+      "get": {
+        "operationId": "DiskList",
+        "summary": "List a VM's Disks",
+        "tags": ["Disk"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VMRef"
+          },
+          {
+            "$ref": "#/components/parameters/PageToken"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the VM's Disks. VM storage, not the Node's physical Drives.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiskPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/vms/{vm}/snapshots": {
+      "get": {
+        "operationId": "SnapshotList",
+        "summary": "List a VM's Snapshots",
+        "tags": ["Snapshot"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VMRef"
+          },
+          {
+            "$ref": "#/components/parameters/PageToken"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the VM's Snapshots.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "operationId": "TaskList",
+        "summary": "List Tasks",
+        "description": "Task state is held by the control plane, so a run from last week is still here. A Task whose target has since been removed is still listed: the target is recorded on the Task, not joined at read time.",
+        "tags": ["Task"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageToken"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "$ref": "#/components/parameters/TaskStateFilter"
+          },
+          {
+            "$ref": "#/components/parameters/TaskKindFilter"
+          },
+          {
+            "$ref": "#/components/parameters/TaskTargetFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of Tasks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tasks/{task}": {
+      "get": {
+        "operationId": "TaskView",
+        "summary": "View a Task",
+        "tags": ["Task"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskRef"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Task.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tasks/{task}/logs": {
+      "get": {
+        "operationId": "TaskLogStream",
+        "summary": "Stream a Task's logs",
+        "description": "Server-sent events, one JSON object per event, tagged log / step / result exactly as the provisioner's stdout line protocol tags them. Logs flow one way, so SSE needs no separate transport. The event's seq is the SSE event id, so a reconnect resumes from Last-Event-ID without losing or duplicating a line. A Task that has already finished replays its whole log from the beginning. Read this with EventSource rather than with the generated call: the generator types a single event here, because an ordinary request/response client cannot hold a stream open.",
+        "tags": ["Task"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskRef"
+          },
+          {
+            "$ref": "#/components/parameters/LastEventId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An open stream of log events until the Task reaches a terminal state.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskLogEvent"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tasks/{task}/cancel": {
+      "post": {
+        "operationId": "TaskCancel",
+        "summary": "Cancel a running Task",
+        "description": "Cancelling sends a signal to the recorded process, which takes a moment to take effect. Returns 202 and the Task, whose state is cancelled once the process is actually gone. A Task that has already reached a terminal state cannot be cancelled, and says so with conflict.",
+        "tags": ["Task"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskRef"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The cancellation is accepted. The returned Task is still the authority on whether it took.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/connections": {
+      "get": {
+        "operationId": "ConnectionList",
+        "summary": "List Connections",
+        "tags": ["Connection"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageToken"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the three upstream integrations. Never a credential value.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/connections/{connection}": {
+      "get": {
+        "operationId": "ConnectionView",
+        "summary": "View a Connection",
+        "tags": ["Connection"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ConnectionRef"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Connection, saying which credentials it needs and which it holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/connections/{connection}/test": {
+      "post": {
+        "operationId": "ConnectionTest",
+        "summary": "Test a Connection",
+        "description": "One operation per integration, reached by name or id. A misconfiguration is discovered here rather than when something is needed.",
+        "tags": ["Connection"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ConnectionRef"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The test ran. code is null on a pass and a sovren error code on a failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionTestResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "PageToken": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "description": "An opaque page token from a previous response's nextPage. Never an offset: an offset shifts under the operator when the underlying list changes, an opaque token does not.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PageSize": {
+        "name": "size",
+        "in": "query",
+        "required": false,
+        "description": "Rows per page.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 25
+        }
+      },
+      "Q": {
+        "name": "q",
+        "in": "query",
+        "required": false,
+        "description": "Substring match on name.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "NodeRef": {
+        "name": "node",
+        "in": "path",
+        "required": true,
+        "description": "A Node's name or its immutable id. Both work in every path, always.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "DriveRef": {
+        "name": "drive",
+        "in": "path",
+        "required": true,
+        "description": "A Drive's name or its immutable id. Both work in every path, always.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PeerRef": {
+        "name": "peer",
+        "in": "path",
+        "required": true,
+        "description": "A Peer's name or its immutable id. Both work in every path, always.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "VMRef": {
+        "name": "vm",
+        "in": "path",
+        "required": true,
+        "description": "A VM's name or its immutable id. Both work in every path, always.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "TaskRef": {
+        "name": "task",
+        "in": "path",
+        "required": true,
+        "description": "A Task's id, or the id:target form an operator would remember instead, such as vm_create:web-01. A Task is the one resource with no mutable name key -- it is never renamed, and its name is a label rather than a lookup key -- so this accepts an id and an id:target form rather than a name. Every other path parameter takes a name or an id, always.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ConnectionRef": {
+        "name": "connection",
+        "in": "path",
+        "required": true,
+        "description": "A Connection's name or its immutable id. Both work in every path, always.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "LastEventId": {
+        "name": "Last-Event-ID",
+        "in": "query",
+        "required": false,
+        "description": "The seq of the last event the client already holds, so a reconnect resumes from there instead of replaying from the beginning. The browser's EventSource sets this itself on reconnect; it is declared here so the console can resume deliberately after a dropped connection.",
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "SiteFilter": {
+        "name": "site",
+        "in": "query",
+        "required": false,
+        "description": "Narrow to one Site, by name or by id. A Site is a physical grouping and a latency and failure boundary, not a tenancy or security one.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "NodeFilter": {
+        "name": "node",
+        "in": "query",
+        "required": false,
+        "description": "Narrow to one Node, by name or by id.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "GroupFilter": {
+        "name": "group",
+        "in": "query",
+        "required": false,
+        "description": "Narrow to Peers in one NetBird Group, by name or by id. NetBird's noun, not a sovren synonym for it.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PeerStatusFilter": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "description": "Narrow to Peers by reachability, which is what staleness is. Filter by status rather than by a date so the console holds no threshold of its own.",
+        "schema": {
+          "$ref": "#/components/schemas/PeerStatus"
+        }
+      },
+      "VMPurposeFilter": {
+        "name": "purpose",
+        "in": "query",
+        "required": false,
+        "explode": true,
+        "style": "form",
+        "description": "Repeatable, and repeatable on purpose. An operator runs the estate or uses a box; those are two different jobs, and the console separates them by asking for `purpose=infrastructure&purpose=service` for the machines that are sovren's own and `purpose=workload` for the ones handed to an operator. A single-valued filter could not express the first of those, because a Dokploy host is infrastructure by the spec's own reading and would otherwise sit in a list with the operator's own machines.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/VMPurpose"
+          }
+        }
+      },
+      "VMRunStateFilter": {
+        "name": "runState",
+        "in": "query",
+        "required": false,
+        "description": "Narrow by run state, including transitional for a VM whose create task is still running and failed for one whose task failed.",
+        "schema": {
+          "$ref": "#/components/schemas/VMRunState"
+        }
+      },
+      "TaskStateFilter": {
+        "name": "state",
+        "in": "query",
+        "required": false,
+        "description": "Narrow by Task state, from the fixed task vocabulary.",
+        "schema": {
+          "$ref": "#/components/schemas/TaskState"
+        }
+      },
+      "TaskKindFilter": {
+        "name": "kind",
+        "in": "query",
+        "required": false,
+        "description": "Narrow by what kind of work the Task was.",
+        "schema": {
+          "$ref": "#/components/schemas/TaskKind"
+        }
+      },
+      "TaskTargetFilter": {
+        "name": "target",
+        "in": "query",
+        "required": false,
+        "description": "Narrow to the Tasks that worked on one target, by name or by id. This is how a resource's Tasks tab is filled: the same list, filtered.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Every failure, in one shape and in sovren's own vocabulary -- never an upstream one. One component rather than one per status, because a status is not a different kind of error: 400 is invalid_request and carries details naming the field and the constraint so a form can show the error where it happened, 404 is not_found because nothing answers to that name or id, 409 is conflict because something else claims that name or the resource is not in a state that allows this, and everything else is whatever its code says. The code is what the console keys off; the message is for the operator.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "description": "Every error carries a fixed sovren code and a requestId that also appears in the audit log, so a user-reported problem is traceable end to end.",
+        "required": ["code", "message", "requestId"],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string",
+            "description": "Present tense, addressed to the operator."
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Opaque. Also written to the audit log for this request."
+          },
+          "retryable": {
+            "type": "boolean",
+            "description": "Whether waiting and trying again could plausibly succeed. Absent means no."
+          },
+          "details": {
+            "type": "array",
+            "description": "Field-level constraint violations, so a form shows the error on the control that caused it rather than as a banner. Present on invalid_request; absent otherwise.",
+            "items": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            }
+          }
+        }
+      },
+      "ErrorDetail": {
+        "type": "object",
+        "description": "One violated constraint, addressed to a field.",
+        "required": ["path", "message"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Dotted path to the field, for example \"cores\" or \"node\"."
+          },
+          "constraint": {
+            "type": ["string", "null"],
+            "description": "The constraint that was violated, named rather than described: \"atLeast1\", \"atMost256\", \"notFound\", \"nameTaken\", \"unsupportedCpuModel\"."
+          },
+          "message": {
+            "type": "string",
+            "description": "Present tense, addressed to the operator."
+          }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "description": "The fixed sovren error vocabulary. The console keys off this, never off the message or the upstream shape.",
+        "enum": [
+          "not_found",
+          "unauthorised",
+          "forbidden",
+          "conflict",
+          "invalid_request",
+          "upstream_unavailable",
+          "upstream_unauthenticated",
+          "action_not_permitted",
+          "task_failed",
+          "internal"
+        ]
+      },
+      "Page": {
+        "type": "object",
+        "description": "Not composed into the page schemas. The shape is restated flat in each of them on purpose: composing it with allOf makes the generator emit `items` twice, and a duplicated key is not a type. The convention that every list returns this envelope is pinned by a test instead, which fails when someone adds a list that forgets.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {}
+          },
+          "nextPage": {
+            "type": ["string", "null"],
+            "description": "Opaque token for the next page, or null at the end of the list."
+          }
+        }
+      },
+      "NodePage": {
+        "type": "object",
+        "description": "A page of Nodes. Every list in sovren returns this envelope.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Node"
+            }
+          },
+          "nextPage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "DrivePage": {
+        "type": "object",
+        "description": "A page of a Node's physical Drives.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Drive"
+            }
+          },
+          "nextPage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "PeerPage": {
+        "type": "object",
+        "description": "A page of the enrolled machines on the overlay.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Peer"
+            }
+          },
+          "nextPage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "VMPage": {
+        "type": "object",
+        "description": "A page of VMs, already joined to their Node and Site.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VM"
+            }
+          },
+          "nextPage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "DiskPage": {
+        "type": "object",
+        "description": "A page of a VM's Disks. VM storage, never a Node's physical Drives.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Disk"
+            }
+          },
+          "nextPage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "SnapshotPage": {
+        "type": "object",
+        "description": "A page of a VM's Snapshots.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Snapshot"
+            }
+          },
+          "nextPage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "TaskPage": {
+        "type": "object",
+        "description": "A page of Tasks.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "nextPage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "ConnectionPage": {
+        "type": "object",
+        "description": "A page of the upstream integrations sovren is configured against.",
+        "required": ["items", "nextPage"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Connection"
+            }
+          },
+          "nextPage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "Node": {
+        "type": "object",
+        "description": "A physical machine. Heterogeneity is the normal case, so what a Node actually has is reported rather than normalised.",
+        "required": [
+          "id",
+          "name",
+          "site",
+          "status",
+          "cpuModel",
+          "cores",
+          "memoryBytes",
+          "maxMemoryBytes",
+          "driveCount",
+          "overlay",
+          "vmCount",
+          "canMigrate",
+          "created",
+          "updated"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Immutable system key. Links never break when something is renamed."
+          },
+          "name": {
+            "type": "string",
+            "description": "Mutable human key. Works in any path parameter alongside the id."
+          },
+          "site": {
+            "$ref": "#/components/schemas/Site"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["online", "offline", "degraded", "unknown"]
+          },
+          "cpuModel": {
+            "type": "string",
+            "description": "What this Node's CPU reports, not the fleet floor. The floor is a constraint, reported separately."
+          },
+          "cores": {
+            "type": "integer"
+          },
+          "sockets": {
+            "type": "integer",
+            "default": 1
+          },
+          "memoryBytes": {
+            "type": "integer"
+          },
+          "maxMemoryBytes": {
+            "type": "integer"
+          },
+          "driveCount": {
+            "type": "integer"
+          },
+          "driveBytes": {
+            "type": "integer"
+          },
+          "overlay": {
+            "description": "The Node's address on the overlay, or null when it is not enrolled. Null is a real state, not an empty healthy cell.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OverlayAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "vmCount": {
+            "type": "integer"
+          },
+          "uptimeSeconds": {
+            "type": ["integer", "null"]
+          },
+          "proxmoxVersion": {
+            "type": ["string", "null"]
+          },
+          "canMigrate": {
+            "type": "boolean",
+            "description": "False across heterogeneous CPUs. Offer no migration action when this is false."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disabledActions": {
+            "type": "array",
+            "description": "Actions this control plane will refuse on this resource right now, each with the fixed code that refuses it.",
+            "items": {
+              "$ref": "#/components/schemas/DisabledAction"
+            },
+            "default": []
+          }
+        }
+      },
+      "OverlayAddress": {
+        "type": "object",
+        "required": ["address", "hostname"],
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "hostname": {
+            "type": "string",
+            "description": "The internal name NetBird resolves. Also the host half of any service's internal name."
+          }
+        }
+      },
+      "Site": {
+        "type": "object",
+        "description": "A physical grouping of Nodes. A latency and failure boundary, not a security one.",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "NodeLink": {
+        "type": "object",
+        "description": "A Node named inline, so a list row carries its own join and never needs one performed by hand. Deliberately not the whole Node: a row is not a detail page.",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Drive": {
+        "type": "object",
+        "description": "A physical disk on a Node. Drive, not Disk: Disk is VM storage and the two must never be confused.",
+        "required": ["id", "name", "nodeId", "type", "sizeBytes", "health", "created", "updated"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string",
+            "description": "The Node this physical disk belongs to. A Drive has no VM, ever."
+          },
+          "type": {
+            "type": "string",
+            "enum": ["ssd", "hdd", "nvme", "unknown"]
+          },
+          "sizeBytes": {
+            "type": "integer"
+          },
+          "usedBytes": {
+            "type": ["integer", "null"]
+          },
+          "health": {
+            "type": "string",
+            "enum": ["healthy", "degraded", "failed", "unknown"]
+          },
+          "pveDevice": {
+            "type": ["string", "null"]
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Peer": {
+        "type": "object",
+        "description": "An enrolled machine on the overlay. NetBird's noun, adopted verbatim. A Peer is not necessarily sovren-managed hardware: an operator's own laptop is a Peer too, and then node and site are null.",
+        "required": [
+          "id",
+          "name",
+          "overlay",
+          "os",
+          "groups",
+          "status",
+          "lastSeen",
+          "node",
+          "site",
+          "created",
+          "updated"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "NetBird's peer name. Mutable, and works in any path parameter alongside the id."
+          },
+          "overlay": {
+            "description": "The Peer's address on the overlay. A Peer without one has not joined, which is why it would not be listed as a Peer at all.",
+            "$ref": "#/components/schemas/OverlayAddress"
+          },
+          "os": {
+            "type": "string",
+            "enum": ["linux", "windows", "macos", "android", "ios", "openbsd", "freebsd", "unknown"]
+          },
+          "groups": {
+            "type": "array",
+            "description": "NetBird Groups this Peer belongs to. Access-control grouping, rendered in NetBird's own vocabulary.",
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            }
+          },
+          "status": {
+            "description": "Reachability, decided by the control plane from lastSeen so the console holds no threshold of its own. A stale Peer and a live one are distinguishable from a list row without opening anything.",
+            "$ref": "#/components/schemas/PeerStatus"
+          },
+          "lastSeen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the overlay last heard from this Peer. Reported whatever the status, because a stale Peer is more useful with its actual timestamp than with a bucket."
+          },
+          "node": {
+            "description": "The Node hosting this Peer, when it is a guest on a machine sovren manages. Null for a Peer that is not a guest.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/NodeLink"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "site": {
+            "description": "The Site of the hosting Node, or null when the Peer is not on a managed machine.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Site"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user": {
+            "type": ["string", "null"]
+          },
+          "isBlocked": {
+            "type": "boolean",
+            "description": "NetBird has this Peer administratively blocked. Reported, not acted on: sovren does not manage NetBird's access rules."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disabledActions": {
+            "type": "array",
+            "description": "Actions this control plane will refuse on this resource right now, each with the fixed code that refuses it. A Task carries it because cancelling a task that has already finished is refused -- and a screen that cannot see that in advance will offer a control the control plane will only ever decline.",
+            "items": {
+              "$ref": "#/components/schemas/DisabledAction"
+            },
+            "default": []
+          }
+        }
+      },
+      "PeerStatus": {
+        "type": "string",
+        "description": "Whether the overlay can currently reach the Peer. stale means not seen recently enough to trust, and is a distinct state from disconnected: a machine that is merely asleep comes back, and one that is off does not.",
+        "enum": ["connected", "stale", "disconnected", "unknown"]
+      },
+      "Group": {
+        "type": "object",
+        "description": "A NetBird Group. Access-control grouping, adopted verbatim.",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "VM": {
+        "type": "object",
+        "description": "A guest, and a first-class offering in its own right. Carries everything a row needs \u2014 its Node, its Site, its overlay address, its specs, its run state \u2014 so nothing is joined by hand.",
+        "required": [
+          "id",
+          "name",
+          "node",
+          "site",
+          "purpose",
+          "cpuModel",
+          "cores",
+          "memoryBytes",
+          "runState",
+          "overlay",
+          "transitionalTask",
+          "failureReason",
+          "canMigrate",
+          "created",
+          "updated"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Mutable human key. Set inside sovren's own cloud-init, so it survives the snippet replacing Proxmox's generated config."
+          },
+          "node": {
+            "$ref": "#/components/schemas/NodeLink"
+          },
+          "site": {
+            "$ref": "#/components/schemas/Site"
+          },
+          "purpose": {
+            "description": "What this VM is for, which is the only difference between an infrastructure VM and a workload one. A field, not a separate resource: after creation the two are treated identically.",
+            "$ref": "#/components/schemas/VMPurpose"
+          },
+          "cpuModel": {
+            "type": "string",
+            "description": "The CPU model this VM runs, which is the fleet's floor rather than its host's, because a VM cannot be more capable than the weakest machine it might land on. The default is the lowest common denominator across the fleet."
+          },
+          "cores": {
+            "type": "integer"
+          },
+          "memoryBytes": {
+            "type": "integer"
+          },
+          "diskBytes": {
+            "type": "integer"
+          },
+          "runState": {
+            "$ref": "#/components/schemas/VMRunState"
+          },
+          "overlay": {
+            "description": "The VM's address on the overlay, or null before it has one. A VM mid-create has none yet, and that must read as absent rather than as an empty healthy cell.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OverlayAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "transitionalTask": {
+            "description": "The Task that put this VM in its transitional state, or null when it is in none. Present exactly when runState is transitional, so a screen can link to the work in flight rather than only say something is happening.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TaskLink"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failureReason": {
+            "description": "Why this VM is in its failed state, naming what failed. Non-null exactly when runState is failed, and distinct from being stopped: a failure is never mistaken for intent.",
+            "type": ["string", "null"]
+          },
+          "canMigrate": {
+            "type": "boolean",
+            "description": "False across heterogeneous CPUs. Offer no migration action when this is false, and say why rather than hiding the action."
+          },
+          "uptimeSeconds": {
+            "type": ["integer", "null"]
+          },
+          "isTemplate": {
+            "type": "boolean",
+            "description": "Marked as a template, so every later VM is a clone of it and arrives already enrolled."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disabledActions": {
+            "type": "array",
+            "description": "Actions this control plane will refuse on this resource right now, each with the fixed code that refuses it.",
+            "items": {
+              "$ref": "#/components/schemas/DisabledAction"
+            },
+            "default": []
+          }
+        }
+      },
+      "VMPurpose": {
+        "type": "string",
+        "description": "What a VM is for. infrastructure backs sovren itself, service hosts a Service, workload is handed to an operator. A field rather than a separate resource: after creation the three are treated identically.",
+        "enum": ["infrastructure", "service", "workload"]
+      },
+      "VMRunState": {
+        "type": "string",
+        "description": "A VM's run state, and the three states that are easy to confuse kept apart. transitional means a Task is running and the outcome is not yet observed; failed means a Task ended in failure, which is not the same as stopped; stopped means an operator or a policy asked for it.",
+        "enum": ["transitional", "running", "stopped", "paused", "suspended", "failed"]
+      },
+      "VMCreateRequest": {
+        "type": "object",
+        "description": "A VM to create. Deliberately small: the bare-VM boundary is held here, and the fields a custom image, a storage pool, or a network fabric would need are absent because the offering stops at them.",
+        "required": ["node", "name", "purpose", "cores", "memoryBytes"],
+        "properties": {
+          "node": {
+            "type": "string",
+            "description": "The Node to create it on, by name or by id."
+          },
+          "name": {
+            "type": "string",
+            "description": "The VM's name, and the name it will resolve by on the overlay. It is also its hostname, set inside the cloud-init user-data.",
+            "minLength": 1
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/VMPurpose"
+          },
+          "cpuModel": {
+            "type": ["string", "null"],
+            "description": "Defaults to the fleet floor when omitted. An unsupported model is rejected with a named constraint rather than silently floored."
+          },
+          "cores": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "memoryBytes": {
+            "type": "integer",
+            "minimum": 536870912
+          },
+          "diskBytes": {
+            "type": ["integer", "null"]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Disk": {
+        "type": "object",
+        "description": "Storage attached to a VM. Disk, not Drive: a Drive is a physical disk on a Node. Every field here is about a guest, and none of them belongs to a Drive.",
+        "required": ["id", "name", "vmId", "sizeBytes", "created", "updated"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vmId": {
+            "type": "string",
+            "description": "The VM this storage belongs to. A Disk has no Node, ever."
+          },
+          "sizeBytes": {
+            "type": "integer"
+          },
+          "usedBytes": {
+            "type": ["integer", "null"]
+          },
+          "storage": {
+            "type": ["string", "null"],
+            "description": "The storage it lives on. Local per node, with no shared filesystem: local-lvm, because ZFS on this hardware is a poor fit."
+          },
+          "format": {
+            "type": ["string", "null"]
+          },
+          "isCloudInit": {
+            "type": "boolean",
+            "description": "The cloud-init drive. It must stay attached, or boot hangs with no useful error."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Snapshot": {
+        "type": "object",
+        "description": "A point-in-time disk copy of a VM, which is what makes an experiment reversible.",
+        "required": ["id", "name", "vmId", "description", "sizeBytes", "created", "updated"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Mutable, and the operator's own label for it rather than a timestamp."
+          },
+          "vmId": {
+            "type": "string"
+          },
+          "description": {
+            "type": ["string", "null"]
+          },
+          "parentSnapshotId": {
+            "description": "The Snapshot this was taken from, or null for the first in a chain.",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sizeBytes": {
+            "type": ["integer", "null"]
+          },
+          "includesMemory": {
+            "type": "boolean",
+            "description": "Whether the VM's memory was captured too, which is what makes a snapshot restorable to the exact running state."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "description": "A unit of asynchronous work: a VM boot, a Terraform apply, an Ansible run. First-class because none of them can complete inside a request, and held by the control plane so a run survives a restart. A failed Task is not retried, on purpose: a failed apply should surface as a failure a human looks at.",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "target",
+          "state",
+          "terminalState",
+          "failureReason",
+          "logCount",
+          "created",
+          "updated"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Immutable system key. A Task is never renamed, so its id is the only key it answers to."
+          },
+          "name": {
+            "type": "string",
+            "description": "A mutable human label, for example \"create web-01\". Not a lookup key for this Task."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TaskKind"
+          },
+          "target": {
+            "description": "What the work was on, recorded when the Task was created rather than joined at read time. A Task whose target has since been removed is still findable, which is the whole point of keeping it.",
+            "$ref": "#/components/schemas/TaskTarget"
+          },
+          "state": {
+            "description": "Where the work is now.",
+            "$ref": "#/components/schemas/TaskState"
+          },
+          "terminalState": {
+            "description": "The state this Task finished in, or null while it has not finished. Cancelled and failed are different answers to an operator, and a Task that never ran is a third.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TaskState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failureReason": {
+            "description": "What failed, named rather than that something did. Non-null exactly when the Task failed.",
+            "type": ["string", "null"]
+          },
+          "cancelledReason": {
+            "type": ["string", "null"]
+          },
+          "startedAt": {
+            "description": "When the work actually began. Null while queued, so a Task that never ran is distinguishable from one that ran briefly.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finishedAt": {
+            "description": "When it reached its terminal state. Null while it has not.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastSeq": {
+            "type": ["integer", "null"],
+            "description": "The seq of the last log event held, which is the Last-Event-ID a reconnect resumes from."
+          },
+          "logCount": {
+            "type": "integer"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disabledActions": {
+            "type": "array",
+            "description": "Actions this control plane will refuse on this resource right now, each with the fixed code that refuses it. A Task carries it because cancelling a task that has already finished is refused -- and a screen that cannot see that in advance will offer a control the control plane will only ever decline.",
+            "items": {
+              "$ref": "#/components/schemas/DisabledAction"
+            },
+            "default": []
+          }
+        }
+      },
+      "TaskState": {
+        "type": "string",
+        "description": "The fixed task vocabulary. There is no 'stuck' state on purpose: a Task left running by a killed process is marked failed on recovery, so there is no state that quietly persists.",
+        "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+      },
+      "TaskKind": {
+        "type": "string",
+        "description": "What kind of work a Task is. The two infra kinds are what the provisioner runs Terraform and Ansible for.",
+        "enum": [
+          "vm_create",
+          "vm_update",
+          "vm_delete",
+          "vm_snapshot",
+          "vm_restore",
+          "terraform_apply",
+          "ansible_run",
+          "connection_test"
+        ]
+      },
+      "TaskTarget": {
+        "type": "object",
+        "description": "The resource a Task acted on, denormalised.",
+        "required": ["resource", "id", "name"],
+        "properties": {
+          "resource": {
+            "type": "string",
+            "enum": ["vm", "node", "site", "connection", "peer"],
+            "description": "Which sort of resource it was."
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Copied at creation. The target may since have been removed, and the Task stays findable with the name it had."
+          }
+        }
+      },
+      "TaskLink": {
+        "type": "object",
+        "description": "A Task named inline, so a resource that is mid-work can link to the work without a second call.",
+        "required": ["id", "kind", "state"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TaskKind"
+          },
+          "state": {
+            "$ref": "#/components/schemas/TaskState"
+          }
+        }
+      },
+      "TaskLogEvent": {
+        "type": "object",
+        "description": "One server-sent event on a Task's log stream: one JSON object per event, tagged exactly as the provisioner tags its stdout lines. A log line is output; a step is a transition the work moved through and is rendered as one; a result is the terminal line, carrying the state it finished in.",
+        "required": ["seq", "tag", "at", "message"],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "description": "Monotonic from 1, and the SSE event id, so a reconnect resumes from it without losing or duplicating a line."
+          },
+          "tag": {
+            "type": "string",
+            "enum": ["log", "step", "result"]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string",
+            "enum": ["debug", "info", "warn", "error"]
+          },
+          "step": {
+            "description": "Which step this is, on a log or a step event. Null on a result.",
+            "type": ["string", "null"]
+          },
+          "state": {
+            "description": "The state the work reached. On a result this is the terminal state, and it is the only thing that may be reported as an outcome.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TaskState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "description": "The sovren error behind a failed result, so the failure reason on the stream and the failure reason on the Task are the same vocabulary.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Error"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "Connection": {
+        "type": "object",
+        "description": "One upstream integration, its endpoint, and the credentials sovren holds for it. A credential is never a returned value: requirements say what the integration needs, credentials say whether sovren has it, and the secret itself crosses this boundary in no operation at all.",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "endpoint",
+          "state",
+          "requirements",
+          "credentials",
+          "lastTest",
+          "created",
+          "updated"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "NetBird's, Dokploy's, and Proxmox's own name for the integration, spelled their way. Works in any path parameter alongside the id."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ConnectionKind"
+          },
+          "endpoint": {
+            "type": ["string", "null"],
+            "description": "The configured base URL, or null when nothing is configured yet."
+          },
+          "state": {
+            "description": "What sovren knows about this integration without being asked.",
+            "$ref": "#/components/schemas/ConnectionState"
+          },
+          "requirements": {
+            "type": "array",
+            "description": "The credentials this integration needs, whether or not any are held. Proxmox is two, not one, and it says so here rather than surprising an operator with it at create time.",
+            "items": {
+              "$ref": "#/components/schemas/CredentialRequirement"
+            }
+          },
+          "credentials": {
+            "type": "array",
+            "description": "The credentials sovren actually holds. One entry per requirement, so the console can show what is missing without comparing two lists itself.",
+            "items": {
+              "$ref": "#/components/schemas/HeldCredential"
+            }
+          },
+          "lastTest": {
+            "description": "The most recent connection test, or null if none has been run.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConnectionTestResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConnectionKind": {
+        "type": "string",
+        "description": "Which upstream a Connection is. Exactly three: Proxmox for the substrate, NetBird for the overlay and the names, Dokploy for the workloads.",
+        "enum": ["proxmox", "netbird", "dokploy"]
+      },
+      "ConnectionState": {
+        "type": "string",
+        "description": "unset when nothing is configured, unconfigured when it is configured but incomplete \u2014 Proxmox with only one of its two credentials is unconfigured, not configured. tested is known good, failed is known broken, unknown is never tested.",
+        "enum": ["unset", "unconfigured", "tested", "failed", "unknown"]
+      },
+      "CredentialRequirement": {
+        "type": "object",
+        "description": "One credential an integration needs, and why. Rendered from the document so the reason cannot drift from the requirement.",
+        "required": ["kind", "label", "required", "why"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["api_token", "api_key", "pam_ssh_key", "password", "tls_ca_bundle"]
+          },
+          "label": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "False when the integration works without it. Held, but not blocking."
+          },
+          "why": {
+            "type": "string",
+            "description": "Why this is needed, in the operator's terms. On Proxmox's PAM SSH key it is the whole story: the API cannot upload cloud-init snippets, so a PAM account and SFTP are the only way."
+          }
+        }
+      },
+      "HeldCredential": {
+        "type": "object",
+        "description": "The fact that a credential is held. Never the credential: there is no field for it, and adding one would make the document a place a secret could be read back out of.",
+        "required": ["kind", "label", "held"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["api_token", "api_key", "pam_ssh_key", "password", "tls_ca_bundle"]
+          },
+          "label": {
+            "type": "string"
+          },
+          "held": {
+            "type": "boolean",
+            "description": "Whether sovren holds a usable value for this credential. The console shows this and nothing more."
+          },
+          "heldSince": {
+            "description": "When the current value was stored, or null when none is.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastRotatedAt": {
+            "description": "When the value last changed, or null if it never has.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ConnectionTestResult": {
+        "type": "object",
+        "description": "Whether an integration answers, and if not, in sovren's own code. A pass is code null; a failure is never a bare status.",
+        "required": ["ok", "code", "message", "requestId", "latencyMs", "testedAt"],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "code": {
+            "description": "A sovren error code on a failure, null on a pass. From the fixed vocabulary, so the console never has to read a message to know what happened.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "As on any error, so a misconfiguration is traceable in the audit log like everything else."
+          },
+          "latencyMs": {
+            "type": ["integer", "null"]
+          },
+          "testedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DisabledAction": {
+        "type": "object",
+        "description": "An action the control plane will refuse, and why. Declared on the resource rather than fetched separately, so a screen cannot render an action without also rendering the reason it is unavailable. The reason is a fixed code, not a sentence: a disabled action that explains itself in free text is an action the console will later contradict.",
+        "required": ["action", "reason"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The action that is unavailable, e.g. `migrate`, `start`, `delete`."
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "explanation": {
+            "type": ["string", "null"],
+            "description": "Present tense, addressed to the operator. Optional -- the code is the contract; the sentence is the courtesy."
+          }
+        }
+      },
+      "VMUpdateRequest": {
+        "type": "object",
+        "description": "A partial change to a VM. Every field is optional and only what is sent is changed. There is no optimistic concurrency in this prototype -- last write wins -- which is a recorded non-goal rather than an oversight.",
+        "minProperties": 1,
+        "properties": {
+          "purpose": {
+            "$ref": "#/components/schemas/VMPurpose"
+          },
+          "cpuModel": {
+            "type": ["string", "null"],
+            "description": "Defaults to the fleet floor when omitted. An unsupported model is refused with a named constraint rather than silently floored."
+          },
+          "cores": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "memoryBytes": {
+            "type": "integer",
+            "minimum": 536870912
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
